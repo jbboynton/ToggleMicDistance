@@ -1,0 +1,17 @@
+# Build products. `Tools/release.sh` builds into DerivedData and installs to
+# /Applications, so nothing here belongs in the repository. The local
+# DerivedData directory also carries a .metadata_never_index marker to keep
+# stale Debug builds out of Spotlight — see CLAUDE.md.
+DerivedData/
+build/
+*.xcarchive
+
+# Per-user Xcode state: window positions, breakpoints, the last scheme used.
+xcuserdata/
+*.xcuserstate
+*.xcuserdatad
+
+.DS_Store
+
+# Stray state from an unrelated tool.
+.netlify
