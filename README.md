@@ -22,29 +22,15 @@ app off for a while, it shows a struck-through mic.
 
 ## Install and use
 
-Download the `.zip` from [Releases](../../releases), unzip it, and drag
-`ToggleMicDistance.app` to `/Applications`.
-
-macOS will refuse to open it the first time. The app is ad hoc signed
-and **not notarized**, so Gatekeeper has nothing to check. Either clear
-the quarantine flag:
-
-```bash
-xattr -dr com.apple.quarantine /Applications/ToggleMicDistance.app
-```
-
-or open it once from the Finder with **right click → Open**, then
-confirm.
-
-Or build from source with Xcode 26 or newer, on macOS 26 or newer:
+Build from source with Xcode 26 or newer, on macOS 26 or newer:
 
 ```bash
 Tools/release.sh
 ```
 
 This builds the Release version, installs it to `/Applications`, and
-relaunches it. A locally built copy is never quarantined, so this
-avoids the step above entirely.
+relaunches it. There is no signed download, because the app is only
+ad hoc signed.
 
 Once it runs, you will see a mic icon in the menu bar:
 
