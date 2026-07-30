@@ -1,0 +1,73 @@
+# Builds the app and attaches it to a GitHub Release, so a fresh clone is not
+# a prerequisite for running it.
+#
+#   git tag v1.0 && git push origin v1.0
+#
+# The app is **ad hoc signed and not notarized** — there is no Apple Developer
+# certificate here — so anything downloaded from the Release is quarantined by
+# the browser and Gatekeeper will refuse to open it until the flag is cleared.
+# The README says how. Nothing in this workflow can fix that; notarization
+# needs a paid Developer ID.
+
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  # Buildable by hand as well, to check the workflow without cutting a tag.
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    # macOS 26 is what the app targets, and the SDK has to be at least that.
+    runs-on: macos-26
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Release
+        # Not filtered down to `error:` only. Doing that hid a real
+        # concurrency warning for several rounds while this app was written.
+        run: |
+          xcodebuild -project ToggleMicDistance.xcodeproj \
+            -scheme ToggleMicDistance \
+            -configuration Release \
+            -destination 'platform=macOS' \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Package
+        run: |
+          BUILD_DIR="$(
+            xcodebuild -project ToggleMicDistance.xcodeproj \
+              -scheme ToggleMicDistance -configuration Release \
+              -showBuildSettings 2>/dev/null \
+              | sed -n 's/^ *CONFIGURATION_BUILD_DIR = //p' | head -1
+          )"
+          test -d "$BUILD_DIR/ToggleMicDistance.app"
+          # ditto, not zip: it preserves the resource forks and extended
+          # attributes an .app bundle needs, and is what Apple's own
+          # instructions use.
+          ditto -c -k --sequesterRsrc --keepParent \
+            "$BUILD_DIR/ToggleMicDistance.app" ToggleMicDistance.zip
+
+      - name: Publish
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" ToggleMicDistance.zip \
+            --title "${GITHUB_REF_NAME}" \
+            --generate-notes
+
+      - name: Upload as a build artifact
+        # So a workflow_dispatch run still produces something to download.
+        uses: actions/upload-artifact@v4
+        with:
+          name: ToggleMicDistance
+          path: ToggleMicDistance.zip
